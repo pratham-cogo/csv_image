@@ -1,0 +1,13 @@
+click
+ipython
+python-dotenv
+fastapi
+uvicorn
+peewee
+psycopg2-binary
+pillow
+aiohttp
+requests
+python-jose
+pandas
+passlib

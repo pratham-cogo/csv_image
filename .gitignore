@@ -1,0 +1,51 @@
+# Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# Virtual environment directory
+venv/
+
+# Distribution / packaging
+*.egg
+*.egg-info
+dist/
+build/
+*.tar.gz
+
+# IDE or Editor specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python coverage and testing files
+.coverage
+.tox/
+.nox/
+*.cover
+*.log
+nosetests.xml
+coverage.xml
+*.hypothesis/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Pre-commit hooks configuration
+.pre-commit-config.yaml
+
+# FastAPI app migration and database files
+migrations/
+*.sqlite3
+*.db
+
+# Other config or secret files
+.env
+*.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
