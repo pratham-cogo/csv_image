@@ -4,18 +4,20 @@ class CreateUser(BaseModel):
     username: str
     password: str
 
-    @model_validator()
-    def validate_username(cls, v):
-        if not v.isalnum():
+    @model_validator(mode='before')
+    def validate_username(cls, values):
+        username = values.get('username')
+        if username and not username.isalnum():
             raise ValueError("Username must be alphanumeric.")
-        return v
+        return values
 
 class LoginUser(BaseModel):
     username: str
     password: str
 
-    @model_validator()
-    def validate_username(cls, v):
-        if not v.isalnum():
+    @model_validator(mode='before')
+    def validate_username(cls, values):
+        username = values.get('username')
+        if username and not username.isalnum():
             raise ValueError("Username must be alphanumeric.")
-        return v
+        return values
