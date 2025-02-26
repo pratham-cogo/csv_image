@@ -11,4 +11,5 @@ requests
 python-jose
 pandas
 passlib
+bcrypt
 python-multipart

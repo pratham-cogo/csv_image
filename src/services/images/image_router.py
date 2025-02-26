@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Backgro
 from middlewares import get_current_user
 from services.images.apis.get_processing_status import get_processing_status
 from services.images.apis.process_image import process_images
+from services.images.apis.image_result_webhook import webhook
 import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -29,7 +30,6 @@ def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...), 
 def get_status(request_id: str, user: dict = Depends(get_current_user)):
     return get_processing_status(request_id=request_id, user_id=user["id"])
     
-# @image_router.post("/webhook")
-# async def receive_webhook(file: UploadFile = File(...)):
-#     content = await file.read()
-#     logger.warning()
+@image_router.post("/webhook")
+def receive_webhook(request_id: str):
+    return webhook(request_id=request_id)
