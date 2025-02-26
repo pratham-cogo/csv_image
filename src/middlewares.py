@@ -1,6 +1,7 @@
 import logging
 from uuid import uuid4
 from contextvars import ContextVar
+from fastapi.requests import Request
 from fastapi import Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
@@ -17,6 +18,15 @@ _request_id_ctx_var: ContextVar[str | None] = ContextVar(REQUEST_ID_CTX_KEY, def
 def get_request_id() -> str | None:
     """Retrieve the current request ID from the context."""
     return _request_id_ctx_var.get()
+
+def get_current_user(request: Request):
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
+    return user
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     """Middleware for handling authentication and managing Peewee database sessions."""

@@ -68,7 +68,6 @@ def create_db_table(model):
     create_tables([model])
     print("Database tables created successfully.")
 
-
 @database_commands.command("drop_tables")
 def drop_db_table(model):
     """Drops all database tables."""

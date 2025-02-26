@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from src.middlewares import AuthenticationMiddleware
 from src.configs.env import APP_ENV
+from src.services.users.user_router import user
 from src.database.db import initialize_db
 import logging
 import os
@@ -17,13 +18,13 @@ app = FastAPI(title="CSV image reformatter", version="1.0")
 if APP_ENV == "development":
     os.environ['PYTHONBREAKPOINT'] = 'IPython.terminal.debugger.set_trace'
 
-# app.include_router(KAM_router, prefix="/KAM", tags=["Key Account Manager"])
+app.include_router(user, prefix="/user", tags=["User"])
 
 # Add middleware
 app.add_middleware(GZipMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if APP_ENV == "development" else ["https://your-production-domain.com"],
+    allow_origins=["*"] if APP_ENV == "development" else ["http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -32,13 +33,13 @@ app.add_middleware(
 app.add_middleware(AuthenticationMiddleware)
 
 @app.on_event("startup")
-async def startup_event():
+def startup_event():
     initialize_db()
 
 @app.get("/health")
-async def health_check():
+def health_check():
     return {"status": "ok"}
 
 @app.get("/")
-async def root():
+def root():
     return {"message": "Welcome to the Image reformatter"}

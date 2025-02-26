@@ -1,8 +1,6 @@
-import subprocess
 from pathlib import Path
 
 from setuptools import find_packages, setup
-from setuptools.command.develop import develop
 
 def get_requirements() -> list[str]:
     try:
@@ -21,7 +19,5 @@ setup(
     packages=find_packages("src"),
     include_package_data=True,
     install_requires=install_requires,
-    entry_points={
-        "console_scripts": ["image = cli:entrypoint"]
-    }
+    entry_points={"console_scripts": ["image = cli:entrypoint"]}
 )
