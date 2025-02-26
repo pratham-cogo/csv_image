@@ -6,7 +6,7 @@ from fastapi import Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from peewee import PostgresqlDatabase
+from database.db import db
 from traceback import format_exc
 from src.auth import decode_access_token
 
@@ -29,14 +29,13 @@ def get_current_user(request: Request):
     return user
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ):
-        # Whitelist public endpoints (e.g., docs, openapi.json, health check, etc.)
-        public_paths = ["/docs", "/openapi.json", "/health", "/"]
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+        # Paths that shouldn't require authentication
+        public_paths = ["/docs", "/openapi.json", "/health", "/", "/user/register", "/user/login"]
+
         if request.url.path in public_paths:
             return await call_next(request)
-        
+
         ctx_token = None
         try:
             request_id = str(uuid4())
@@ -60,7 +59,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
             request.state.user = user_info
 
-            request.state.db = PostgresqlDatabase.get_instance()
+            request.state.db = db
             if request.state.db.is_closed():
                 request.state.db.connect(reuse_if_open=True)
 
