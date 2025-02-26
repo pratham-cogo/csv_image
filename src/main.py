@@ -4,6 +4,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from src.middlewares import AuthenticationMiddleware
 from src.configs.env import APP_ENV
 from src.services.users.user_router import user
+from src.services.images.image_router import image_router
 from src.database.db import initialize_db
 import logging
 import os
@@ -19,6 +20,7 @@ if APP_ENV == "development":
     os.environ['PYTHONBREAKPOINT'] = 'IPython.terminal.debugger.set_trace'
 
 app.include_router(user, prefix="/user", tags=["User"])
+app.include_router(image_router, prefix="/image", tags=["Image"])
 
 # Add middleware
 app.add_middleware(GZipMiddleware)
