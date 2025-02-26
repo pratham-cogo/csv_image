@@ -29,12 +29,14 @@ def get_current_user(request: Request):
     return user
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
-    """Middleware for handling authentication and managing Peewee database sessions."""
-
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ):
-        """Process the request and manage authentication and database connections."""
+        # Whitelist public endpoints (e.g., docs, openapi.json, health check, etc.)
+        public_paths = ["/docs", "/openapi.json", "/health", "/"]
+        if request.url.path in public_paths:
+            return await call_next(request)
+        
         ctx_token = None
         try:
             request_id = str(uuid4())
