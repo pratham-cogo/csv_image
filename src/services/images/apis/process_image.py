@@ -3,61 +3,59 @@ from services.images.models.processed_images import ProcessedImages
 from services.images.apis.upload_image import upload_image
 import pandas as pd
 from database.db import db
-import uuid, requests, logging
+from enums.image_enums import ProcessState
+import uuid
+import requests, logging
 from PIL import Image
 from io import BytesIO
+from typing import Tuple, Union, Optional
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-def process_images(file_path, user_id, background_tasks: BackgroundTasks):
+def process_images(file_path: str, user_id: str, background_tasks: BackgroundTasks) -> str:
     with db.atomic():
-        execute(file_path, user_id, background_tasks)
+        return execute(file_path, user_id, background_tasks)
 
-def execute(file_path, user_id, background_tasks: BackgroundTasks):
+def execute(file_path: str, user_id: str, background_tasks: BackgroundTasks) -> str:
     is_valid, df_or_error = validate_csv(file_path)
     if not is_valid:
-        raise ValueError(df_or_error)
+        raise ValueError(df_or_error)  
 
-    request_id = uuid.uuid4()
+    request_id: str = uuid.uuid4()
 
-    for item in df_or_error:
-        image_request = ProcessedImages.create(
-            request_id=request_id,
-            user=user_id,
-            input_image_urls=item["Input Image Urls"].tolist(),
-            product_name=item["Product Name"],
-            status="processing",
-        )
-
-        background_tasks.add_task(process_images_background, item, image_request)
+    background_tasks.add_task(process_images_background, df_or_error, request_id, user_id)
 
     return request_id
 
-def process_images_background(df, image_request: ProcessedImages):
-    output_urls = []
-    input_urls = df["Input Image Urls"].split(",")
-    for url in input_urls:
-        compressed_image = compress_image(url)
+def process_images_background(df: pd.DataFrame, request_id: str, user_id: str) -> None:
+    for _, row in df.iterrows():
+        input_urls = row["Input Image Urls"].split(",") if isinstance(row["Input Image Urls"], str) else list(row["Input Image Urls"])
 
-        if compressed_image:
-            output_url = upload_image(compressed_image)
+        image_request: ProcessedImages = ProcessedImages.create(
+            request_id=request_id,
+            user=user_id,
+            input_image_urls=input_urls,
+            product_name=row["Product Name"],
+            status=ProcessState.PROCESSING.value,
+        )
 
-            if output_url:
-                output_urls.append(output_url)
-                image_request.processed_count += 1
-                image_request.save()
+        output_urls: list[str] = []
+        for url in input_urls:
+            compressed_image = compress_image(url)
+            if compressed_image:
+                output_url = upload_image(compressed_image)
+                if output_url:
+                    output_urls.append(output_url)
 
-    # Update the ImageRequest entry
-    image_request.output_image_urls = ",".join(output_urls)
-    image_request.status = "completed"
-    image_request.save()
+        image_request.output_image_urls = output_urls
+        image_request.status = ProcessState.COMPLETED.value
+        image_request.save()
 
-    # Trigger webhook on completion
-    # trigger_webhook(image_request.request_id)
+    # Optionally, trigger the webhook after processing all rows
+    # trigger_webhook(request_id)
 
-
-def validate_csv(file_path):
+def validate_csv(file_path: str) -> Tuple[bool, Union[pd.DataFrame, str]]:
     try:
         df = pd.read_csv(file_path)
         required_columns = ["S. No.", "Product Name", "Input Image Urls"]
@@ -66,19 +64,16 @@ def validate_csv(file_path):
         return True, df
     except Exception as e:
         return False, f"Error reading CSV: {str(e)}"
-    
-def compress_image(image_url, quality=50):
+
+def compress_image(image_url: str, quality: int = 50) -> Optional[BytesIO]:
     try:
-        # Download the image
         response = requests.get(image_url)
         response.raise_for_status()
         image = Image.open(BytesIO(response.content))
 
-        # Compress the image
         output_buffer = BytesIO()
         image.save(output_buffer, format="JPEG", quality=quality)
         output_buffer.seek(0)
-
         return output_buffer
     except Exception as e:
         logger.warning(f"Failed to compress image: {str(e)}")

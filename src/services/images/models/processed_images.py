@@ -28,7 +28,6 @@ class ProcessedImages(Model):
     product_name = CharField(index=True)
     output_image_urls = ArrayField(CharField, null=True)
     status = CharField(default=ProcessState.PENDING.value)
-    processed_count = IntegerField(default=0)
 
     def save(self, *args, **kwargs):
         self.updated_at = datetime.now()
