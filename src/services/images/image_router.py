@@ -10,13 +10,13 @@ logger = logging.getLogger(__name__)
 image_router = APIRouter()
 
 @image_router.post("/upload")
-async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...), user: dict = Depends(get_current_user)):
     try:
         file_path = f"temp_{file.filename}"
         with open(file_path, "wb") as buffer:
             buffer.write(file.file.read())
 
-        request_id = await process_images(file_path, user["id"], background_tasks)
+        request_id = process_images(file_path, user["id"], background_tasks)
         return {"request_id": request_id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

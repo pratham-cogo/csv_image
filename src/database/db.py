@@ -27,11 +27,14 @@ def initialize_db():
     # from services.interactions.models.interaction import Interaction
 
     # models = [KeyAccountManager, Restaurant, Contact, Interaction]
-    models = []
+    from services.users.models.users import User
+    from services.images.models.processed_images import ProcessedImages
+
+    models = [User, ProcessedImages]
     try:
         db.connect(reuse_if_open=True)
         # create_tables(models)
-        print("Database initialized and tables created.")
+        # print("Database initialized and tables created.")
     except Exception as e:
         print(f"Error during database initialization: {e}")
         raise
