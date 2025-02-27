@@ -22,11 +22,11 @@ from enums.image_enums import ProcessState
 
 class ProcessedImages(Model):
     id = UUIDField(constraints=[SQL("DEFAULT gen_random_uuid()")], primary_key=True)
-    request_id = UUIDField(unique=True, index=True)
+    request_id = UUIDField(index=True)
     user_id = ForeignKeyField(User, backref="processed_images")
-    input_image_urls = ArrayField(CharField)
+    input_image_urls = ArrayField(TextField, index=False)
     product_name = CharField(index=True)
-    output_image_urls = ArrayField(CharField, null=True)
+    output_image_urls = ArrayField(TextField, null=True, index=False)
     status = CharField(default=ProcessState.PENDING.value)
 
     def save(self, *args, **kwargs):

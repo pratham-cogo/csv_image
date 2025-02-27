@@ -29,31 +29,43 @@ def execute(file_path: str, user_id: str, background_tasks: BackgroundTasks) -> 
     return request_id
 
 def process_images_background(df: pd.DataFrame, request_id: str, user_id: str) -> None:
+    logger.info(f"Starting background task for request_id: {request_id}")
+
     for _, row in df.iterrows():
+        logger.info(f"Processing product: {row['Product Name']}")
+
         input_urls = row["Input Image Urls"].split(",") if isinstance(row["Input Image Urls"], str) else list(row["Input Image Urls"])
 
-        image_request: ProcessedImages = ProcessedImages.create(
-            request_id=request_id,
-            user=user_id,
-            input_image_urls=input_urls,
-            product_name=row["Product Name"],
-            status=ProcessState.PROCESSING.value,
-        )
+        try:
+            image_request: ProcessedImages = ProcessedImages.create(
+                request_id=request_id,
+                user_id=user_id,
+                input_image_urls=input_urls,
+                product_name=row["Product Name"],
+                status=ProcessState.PROCESSING.value,
+            )
+            logger.info(f"Created database entry for product: {row['Product Name']}")
 
-        output_urls: list[str] = []
-        for url in input_urls:
-            compressed_image = compress_image(url)
-            if compressed_image:
-                output_url = upload_image(compressed_image)
-                if output_url:
-                    output_urls.append(output_url)
+            output_urls: list[str] = []
+            for url in input_urls:
+                logger.info(f"Compressing image: {url}")
+                compressed_image = compress_image(url)
+                if compressed_image:
+                    logger.info(f"Uploading compressed image for: {url}")
+                    output_url = upload_image(compressed_image)
+                    if output_url:
+                        output_urls.append(output_url)
 
-        image_request.output_image_urls = output_urls
-        image_request.status = ProcessState.COMPLETED.value
-        image_request.save()
+            image_request.output_image_urls = output_urls
+            image_request.status = ProcessState.COMPLETED.value
+            image_request.save()
+            logger.info(f"Finished processing product: {row['Product Name']}")
 
-    # Optionally, trigger the webhook after processing all rows
-    # trigger_webhook(request_id)
+        except Exception as e:
+            logger.error(f"Error processing product: {row['Product Name']}. Error: {str(e)}")
+
+    logger.info(f"Background task completed for request_id: {request_id}")
+
 
 def validate_csv(file_path: str) -> Tuple[bool, Union[pd.DataFrame, str]]:
     try:
