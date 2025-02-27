@@ -1,18 +1,18 @@
-from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 import io
 import csv
-import uuid
 import logging
+import uuid
 from typing import List
+from fastapi import HTTPException
 from services.images.models.processed_images import ProcessedImages
 from enums.image_enums import ProcessState
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 def webhook(request_id: str):
     try:
-        # Validate and convert request_id to UUID
         req_uuid = uuid.UUID(request_id)
     except Exception as e:
         logger.warning(f"Invalid request_id format: {request_id}")
@@ -26,7 +26,7 @@ def webhook(request_id: str):
         raise HTTPException(status_code=404, detail="No records found for the provided request ID.")
     
     if any(record.status != ProcessState.COMPLETED.value for record in records):
-        return "Processing is not complete yet."
+        return {"detail": "Processing is not complete yet."}
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -40,7 +40,9 @@ def webhook(request_id: str):
     output.seek(0)
     
     return StreamingResponse(
-        output,
+        io.BytesIO(output.getvalue().encode('utf-8')),  # Ensuring correct encoding
         media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=processed_{request_id}.csv"}
+        headers={
+            "Content-Disposition": f"attachment; filename=processed_{request_id}.csv"
+        }
     )
