@@ -1,4 +1,4 @@
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, HTTPException, status
 from services.images.models.processed_images import ProcessedImages
 from services.images.apis.upload_image import upload_image
 import pandas as pd
@@ -55,6 +55,10 @@ def process_images_background(df: pd.DataFrame, request_id: str, user_id: str) -
                     output_url = upload_image(compressed_image)
                     if output_url:
                         output_urls.append(output_url)
+
+            if len(output_urls) != len(input_urls):
+                ProcessedImages.delete().where(ProcessedImages.request_id==request_id).execute()
+                raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Error  in image processing")
 
             image_request.output_image_urls = output_urls
             image_request.status = ProcessState.COMPLETED.value
